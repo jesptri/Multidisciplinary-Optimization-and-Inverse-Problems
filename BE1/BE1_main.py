@@ -49,6 +49,5 @@ h_count = 0
 
 ### Exemples d'utilisation
 BE1_main(1,1)
-
-
-
+BE1_main(2,1)
+BE1_main(3,1)
