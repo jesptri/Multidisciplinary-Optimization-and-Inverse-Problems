@@ -145,48 +145,6 @@ def algo_SQP(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, un_hf, h_des_c, 
     return x_opt, f_opt, fin, nit
 
 
-# def algo_SQP(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, un_hf, h_des_c, un_nit_max, une_tol_x, une_tol_f, une_tol_g):
-
-#     #tempx et templambda sont des vecteurs colonne
-#     tempx = np.array(un_x0).reshape(-1, 1)
-#     templambda = np.array(un_lambda0).reshape(-1, 1)
-    
-    
-#     # tempx=np.array(un_x0)
-#     # templambda = np.array(un_lambda0)   
-#     n = len(tempx)
-#     p = len(templambda)
-    
-    
-#     #Evaluation du Lagrangien
-#     fdex = une_f(tempx)
-#     cdex = des_c(tempx)
-
-#     #Evaluation du gradient du Lagrangien
-#     gfdex = un_gf(tempx)
-#     jcdex = jac_des_c(tempx).reshape(1,-1)
-    
-#     #Evaluation de la hessienne du Lagrangien
-#     hfdex = un_hf(tempx)
-#     hcdex = h_des_c(tempx)
-
-#     k = 0
-#     fin = 0
-#     while fin == 0 and k < un_nit_max:
-        
-#         #A COMPLETER
-        
-#         if k == un_nit_max-1:
-#             fin = 3
-       
-#         k=k+1    
-            
-#     x_opt = tempx
-#     f_opt = fdex
-#     nit = k
-
-#     return x_opt, f_opt, fin, nit
-
 def algo_SQP_BFGS(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, H0, un_nit_max, une_tol_x, une_tol_f, une_tol_g):
 
     tempx = np.array(un_x0, dtype=float).reshape(-1, 1)
@@ -202,8 +160,7 @@ def algo_SQP_BFGS(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, H0, un_nit_
     #Evaluation du gradient du Lagrangien
     gfdex = un_gf(tempx)
     jcdex = jac_des_c(tempx).reshape(1,-1)
-    print(cdex)
-    print(jcdex)
+
     #Approximation de la hessienne du Lagrangien
     
     H_old=H0
@@ -288,142 +245,108 @@ def algo_SQP_BFGS(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, H0, un_nit_
     return x_opt, f_opt, fin, nit
 
 
-    ######## ATTENTION ###################
-    ### Les deux suites de commande suivantes ne donnent pas le meme resultat:
-        
-    #####cas 1######                          
-    # a=np.array([1,2])
-    # old_a=a
-    # a[0]=3
-    # print(a)
-    # print(old_a)
-
-    #####cas 2######
-    # a=np.array([1,2])
-    # old_a=a
-    # a=np.array([3,2])
-    # print(a)
-    # print(old_a)
-
-    ### Afin d'obtenir le meme resultat que le cas 2 en utilisant 
-    ### une affectation comme dans le cas 1, il faut utiliser la methode copy()
-    
-    #####cas 3######                          
-    # a=np.array([1,2])
-    # old_a=a.copy()
-    # a[0]=3
-    # print(a)
-    # print(old_a)
-    
+ 
 
 
 def algo_SQP_sans_derivee(une_f, des_c, un_x0, un_lambda0, H0, une_tol_h, un_nit_max, une_tol_x, une_tol_f, une_tol_g):
-
-    
     tempx = np.array(un_x0, dtype=float).reshape(-1, 1)
     templambda = np.array(un_lambda0, dtype=float).reshape(-1, 1)
 
     n = len(tempx)
     p = len(templambda)
-    h = 1e-5
-    #Evaluation du Lagrangien
-    fdex = une_f(tempx)
-    cdex = des_c(tempx)
+    h = une_tol_h
 
-    #Approximation du gradient du Lagrangien
-    gfdex=np.zeros((n,1))
-
-    for i in range(n):
-        gfdex[i,0] = (une_f(tempx + h*np.eye(n)[:, i]) - une_f(tempx))/h
-    jcdex = np.zeros((1,n))
-    for i in range(n):
-        jcdex[0,i] = (des_c(tempx + h*np.eye(n)[:, i]) - des_c(tempx))/h
-
-    #Approximation de la hessienne du Lagrangien
-    
-    H_old=H0
-    H_k=H0
-    grad_lagrangien_k = gfdex + np.dot(jcdex.T, templambda)
-
-
-
+    x_k = tempx
+    lambda_k = templambda
+    H_k = H0
 
     k = 0
     fin = 0
-    # print(templambda)
-    x_k = tempx
-    lambda_k = templambda   
+
+    # Initial evaluation
+    fdex = une_f(x_k)
+    cdex = des_c(x_k)
+
+    # Approximate gradient of f
+    gfdex = np.zeros((n, 1))
+    for i in range(n):
+        e = np.zeros((n, 1))
+        e[i, 0] = 1
+        gfdex[i, 0] = (une_f(x_k + h * e) - une_f(x_k)) / h
+
+    # Approximate Jacobian of c (row vector)
+    jcdex = np.zeros((1, n))
+    for i in range(n):
+        e = np.zeros((n, 1))
+        e[i, 0] = 1
+        jcdex[0, i] = (des_c(x_k + h * e) - des_c(x_k)) / h
+
+    grad_lagrangien_k = gfdex + jcdex.T @ lambda_k
 
     while fin == 0 and k < un_nit_max:
-           
+        # KKT system
         A = H_k
         B = jcdex.T
         C = jcdex
         D = np.zeros((p, p))
-        M = np.block([[A, B],[C, D]])
+        M = np.block([[A, B], [C, D]])
 
         E = -gfdex
-        F = -cdex
-        Y = np.block([[E],[F]])
+        F = -np.array([[cdex]])  # ensure F is 2D
+        Y = np.vstack([E, F])
 
-        #A COMPLETER
-        
-
-        solution = np.linalg.solve(M,Y)
+        solution = np.linalg.solve(M, Y)
 
         d_k = solution[:n].reshape(-1, 1)
-
         lambda_k = solution[n:].reshape(-1, 1)
 
         x_old = x_k.copy()
-
-
-        x_k += d_k
-
-        #Evaluation du Lagrangien
-        fdex = une_f(x_k)
-        cdex = des_c(x_k)
-            #Evaluation du gradient
-        for i in range(n):
-            gfdex[i,0] = (une_f(x_k + h*np.eye(n)[:, i]) - une_f(x_k))/h
-
-        for i in range(n):
-            jcdex[0,i] = (des_c(x_k + h*np.eye(n)[:, i]) - des_c(x_k))/h
-
-        #jcdex = jac_des_c(x_k).reshape(1,-1) 
         grad_lagrangien_old = grad_lagrangien_k.copy()
-        grad_lagrangien_k = gfdex + np.dot(jcdex.T, lambda_k)
 
-        
-        #Evaluation de Hk
+        x_k = x_k + d_k
 
+        # Recompute for next iteration
+        fdex_new = une_f(x_k)
+        cdex_new = des_c(x_k)
+        gfdex_new = np.zeros((n, 1))
+        for i in range(n):
+            e = np.zeros((n, 1))
+            e[i, 0] = 1
+            gfdex_new[i, 0] = (une_f(x_k + h * e) - une_f(x_k)) / h
+        jcdex_new = np.zeros((1, n))
+        for i in range(n):
+            e = np.zeros((n, 1))
+            e[i, 0] = 1
+            jcdex_new[0, i] = (des_c(x_k + h * e) - des_c(x_k)) / h
+        grad_lagrangien_k = gfdex_new + jcdex_new.T @ lambda_k
+
+        # BFGS update
         s_k = x_k - x_old
         y_k = grad_lagrangien_k - grad_lagrangien_old
-
-        if y_k.T @ s_k > 0 :
-
+        if float(y_k.T @ s_k) > 0:
             H_old = H_k.copy()
-            f1 = np.dot(y_k,y_k.T)/np.dot(y_k.T, s_k)
-            f2 = (H_old @ s_k @ s_k.T @ H_old) / (s_k.T @ H_old @ s_k)
-            H_k = H_old + f1 - f2
-        
-        if k == un_nit_max-1:
+            H_k = H_old + (y_k @ y_k.T) / (y_k.T @ s_k) - (H_old @ s_k @ s_k.T @ H_old) / (s_k.T @ H_old @ s_k)
+
+        # Stopping criteria
+        if np.linalg.norm(d_k) < une_tol_x:
+            fin = 2
+        elif abs(fdex_new - fdex) < une_tol_f:
+            fin = 3
+        elif np.linalg.norm(grad_lagrangien_k) < une_tol_g:
+            fin = 4
+        elif k == un_nit_max - 1:
             fin = 1
 
-        # if np.linalg.norm(d_k) < une_tol_x:
-        #     fin = 2
+        # Prepare for next iteration
+        fdex = fdex_new
+        cdex = cdex_new
+        gfdex = gfdex_new
+        jcdex = jcdex_new
 
-        # if abs(une_f(x_k) - une_f(x_old)) < une_tol_f:
-        #     fin = 3
+        k += 1
 
-        # if np.linalg.norm(grad_lagrangien_k) < une_tol_g:
-        #     fin = 4
-       
-        k=k+1      
-            
-    x_opt = tempx
-    f_opt = fdex
+    x_opt = x_k
+    f_opt = une_f(x_opt)
     nit = k
-
 
     return x_opt, f_opt, fin, nit
