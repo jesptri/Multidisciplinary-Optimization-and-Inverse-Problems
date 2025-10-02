@@ -145,48 +145,6 @@ def algo_SQP(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, un_hf, h_des_c, 
     return x_opt, f_opt, fin, nit
 
 
-# def algo_SQP(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, un_hf, h_des_c, un_nit_max, une_tol_x, une_tol_f, une_tol_g):
-
-#     #tempx et templambda sont des vecteurs colonne
-#     tempx = np.array(un_x0).reshape(-1, 1)
-#     templambda = np.array(un_lambda0).reshape(-1, 1)
-    
-    
-#     # tempx=np.array(un_x0)
-#     # templambda = np.array(un_lambda0)   
-#     n = len(tempx)
-#     p = len(templambda)
-    
-    
-#     #Evaluation du Lagrangien
-#     fdex = une_f(tempx)
-#     cdex = des_c(tempx)
-
-#     #Evaluation du gradient du Lagrangien
-#     gfdex = un_gf(tempx)
-#     jcdex = jac_des_c(tempx).reshape(1,-1)
-    
-#     #Evaluation de la hessienne du Lagrangien
-#     hfdex = un_hf(tempx)
-#     hcdex = h_des_c(tempx)
-
-#     k = 0
-#     fin = 0
-#     while fin == 0 and k < un_nit_max:
-        
-#         #A COMPLETER
-        
-#         if k == un_nit_max-1:
-#             fin = 3
-       
-#         k=k+1    
-            
-#     x_opt = tempx
-#     f_opt = fdex
-#     nit = k
-
-#     return x_opt, f_opt, fin, nit
-
 def algo_SQP_BFGS(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, H0, un_nit_max, une_tol_x, une_tol_f, une_tol_g):
 
     tempx = np.array(un_x0, dtype=float).reshape(-1, 1)
@@ -202,8 +160,7 @@ def algo_SQP_BFGS(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, H0, un_nit_
     #Evaluation du gradient du Lagrangien
     gfdex = un_gf(tempx)
     jcdex = jac_des_c(tempx).reshape(1,-1)
-    print(cdex)
-    print(jcdex)
+
     #Approximation de la hessienne du Lagrangien
     
     H_old=H0
@@ -288,33 +245,7 @@ def algo_SQP_BFGS(une_f, des_c, un_x0, un_lambda0, un_gf, jac_des_c, H0, un_nit_
     return x_opt, f_opt, fin, nit
 
 
-    ######## ATTENTION ###################
-    ### Les deux suites de commande suivantes ne donnent pas le meme resultat:
-        
-    #####cas 1######                          
-    # a=np.array([1,2])
-    # old_a=a
-    # a[0]=3
-    # print(a)
-    # print(old_a)
-
-    #####cas 2######
-    # a=np.array([1,2])
-    # old_a=a
-    # a=np.array([3,2])
-    # print(a)
-    # print(old_a)
-
-    ### Afin d'obtenir le meme resultat que le cas 2 en utilisant 
-    ### une affectation comme dans le cas 1, il faut utiliser la methode copy()
-    
-    #####cas 3######                          
-    # a=np.array([1,2])
-    # old_a=a.copy()
-    # a[0]=3
-    # print(a)
-    # print(old_a)
-    
+ 
 
 
 def algo_SQP_sans_derivee(une_f, des_c, un_x0, un_lambda0, H0, une_tol_h, un_nit_max, une_tol_x, une_tol_f, une_tol_g):
